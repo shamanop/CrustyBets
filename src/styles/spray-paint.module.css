@@ -1,0 +1,190 @@
+/* ============================================================
+   CrustyBets - Spray Paint Effects Module
+   Aerosol can, drip, splatter, and reveal effects
+   ============================================================ */
+
+/* --- Spray Text ---
+   Applies the spray-paint SVG displacement filter to text,
+   giving rough, aerosolized edges. Requires the #spray-paint
+   SVG filter to be present in the DOM.
+   ------------------------------------------------------------ */
+.sprayText {
+  position: relative;
+  filter: url(#spray-paint);
+  font-family: var(--font-marker, "Permanent Marker", cursive);
+  display: inline-block;
+}
+
+/* Faint overspray halo behind text */
+.sprayText::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: inherit;
+  opacity: 0.15;
+  filter: blur(6px) url(#spray-paint);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* --- Spray Reveal ---
+   Clip-path animation that reveals content as if being
+   sprayed from left to right in a rough sweep.
+   ------------------------------------------------------------ */
+.sprayReveal {
+  clip-path: inset(0 100% 0 0);
+  animation: spray-reveal 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes spray-reveal {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  30% {
+    clip-path: inset(0 65% 0 0);
+  }
+  60% {
+    clip-path: inset(0 25% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Variant: reveal from center outward */
+.sprayRevealCenter {
+  clip-path: inset(0 50% 0 50%);
+  animation: spray-reveal-center 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes spray-reveal-center {
+  0% {
+    clip-path: inset(0 50% 0 50%);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* --- Splatter ---
+   Radial gradient splotches as pseudo-elements to simulate
+   paint splatter marks on a surface.
+   ------------------------------------------------------------ */
+.splatter {
+  position: relative;
+  overflow: visible;
+}
+
+.splatter::before {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  top: -15px;
+  left: -10px;
+  background:
+    radial-gradient(
+        ellipse at 30% 40%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 0%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 35%,
+        transparent 36%
+      ),
+    radial-gradient(
+        ellipse at 70% 20%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 0%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 20%,
+        transparent 21%
+      ),
+    radial-gradient(
+        ellipse at 50% 75%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 0%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 15%,
+        transparent 16%
+      ),
+    radial-gradient(
+        ellipse at 15% 70%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 0%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 10%,
+        transparent 11%
+      );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+  filter: url(#spray-paint);
+}
+
+.splatter::after {
+  content: "";
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  bottom: -10px;
+  right: -8px;
+  background:
+    radial-gradient(
+        ellipse at 40% 50%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 0%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 30%,
+        transparent 31%
+      ),
+    radial-gradient(
+        ellipse at 80% 30%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 0%,
+        var(--splatter-color, var(--color-lobster-red, #cc2c18)) 18%,
+        transparent 19%
+      );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.7;
+  filter: url(#spray-paint);
+}
+
+/* Color variants for splatters */
+.splatterOrange {
+  --splatter-color: var(--color-crab-orange, #ff6b35);
+}
+
+.splatterGreen {
+  --splatter-color: var(--color-neon-green, #39ff14);
+}
+
+.splatterPink {
+  --splatter-color: var(--color-hot-pink, #ff2d55);
+}
+
+/* --- Drip ---
+   Paint drip effect using a rounded bottom shape that
+   animates downward as if paint is running.
+   ------------------------------------------------------------ */
+.drip {
+  position: relative;
+}
+
+.drip::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: var(--drip-left, 20%);
+  width: var(--drip-width, 8px);
+  height: var(--drip-height, 25px);
+  background: var(--drip-color, var(--color-lobster-red, #cc2c18));
+  border-radius: 0 0 50% 50%;
+  animation: drip 2s ease-in forwards;
+  animation-delay: var(--drip-delay, 0s);
+  opacity: 0;
+}
+
+/* Second drip for visual variety */
+.dripDouble::before {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  left: var(--drip2-left, 65%);
+  width: var(--drip2-width, 6px);
+  height: var(--drip2-height, 18px);
+  background: var(--drip-color, var(--color-lobster-red, #cc2c18));
+  border-radius: 0 0 50% 50%;
+  animation: drip 2s ease-in forwards;
+  animation-delay: var(--drip2-delay, 0.4s);
+  opacity: 0;
+}

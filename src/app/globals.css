@@ -1,26 +1,400 @@
+/* ============================================================
+   CrustyBets - Global Styles
+   A crustacean-themed casino with street art / stickerpop aesthetic
+   ============================================================ */
+
+/* --- Tailwind v4 Import --- */
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Google Fonts loaded via <link> in layout.tsx */
+
+/* ============================================================
+   Theme Configuration - Tailwind v4 Custom Properties
+   ============================================================ */
+@theme {
+  /* --- Color Palette --- */
+
+  /* Backgrounds */
+  --color-bg-void: #0a0a0f;
+  --color-bg-wall: #1a1a2e;
+  --color-bg-slate: #16213e;
+
+  /* Crustacean Core */
+  --color-lobster-red: #cc2c18;
+  --color-crab-orange: #ff6b35;
+  --color-gold: #ea9e2b;
+
+  /* Ocean Tones */
+  --color-deep-teal: #0d7377;
+  --color-bright-teal: #14a3a8;
+  --color-aqua: #3ab7bf;
+
+  /* Neon / Street Art */
+  --color-neon-green: #39ff14;
+  --color-hot-pink: #ff2d55;
+  --color-neon-purple: #bc13fe;
+  --color-neon-yellow: #ffcc00;
+
+  /* Neutrals */
+  --color-sticker-white: #f5f5f0;
+  --color-spray-cream: #ffe4c4;
+
+  /* --- Font Families --- */
+  --font-display: "Bungee Shade", cursive;
+  --font-marker: "Permanent Marker", cursive;
+  --font-sticker: "Bangers", cursive;
+  --font-body: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* --- Custom Animation Names --- */
+  --animate-neon-flicker: neon-flicker 3s infinite;
+  --animate-neon-pulse: neon-pulse 2s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-spin-slow: spin-slow 20s linear infinite;
+  --animate-marquee: marquee 20s linear infinite;
+  --animate-drip: drip 2s ease-in forwards;
+  --animate-sticker-pop: sticker-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================================
+   SVG Filters
+   These are referenced via filter: url(#filter-name) and must
+   be placed in the DOM via layout.tsx using the .svg-filters class
+   ============================================================ */
+
+/*
+  Add this SVG block to your layout.tsx inside the <body>:
+
+  <svg className="svg-filters">
+    <defs>
+      <filter id="spray-paint">
+        <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="5" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+      <filter id="rough-paper">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch" result="noise" />
+        <feColorMatrix in="noise" type="saturate" values="0" result="gray-noise" />
+        <feBlend in="SourceGraphic" in2="gray-noise" mode="multiply" />
+      </filter>
+      <filter id="grunge">
+        <feTurbulence type="turbulence" baseFrequency="0.65" numOctaves="3" result="noise" />
+        <feColorMatrix in="noise" type="saturate" values="0" result="gray" />
+        <feBlend in="SourceGraphic" in2="gray" mode="overlay" />
+      </filter>
+    </defs>
+  </svg>
+*/
+
+.svg-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   Keyframe Animations
+   ============================================================ */
+
+/* Subtle neon sign flicker effect */
+@keyframes neon-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  10% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0.98;
+  }
+  20% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  55% {
+    opacity: 1;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Pulsing neon text-shadow glow */
+@keyframes neon-pulse {
+  0%,
+  100% {
+    text-shadow:
+      0 0 7px currentColor,
+      0 0 10px currentColor,
+      0 0 21px currentColor,
+      0 0 42px currentColor;
+  }
+  50% {
+    text-shadow:
+      0 0 4px currentColor,
+      0 0 7px currentColor,
+      0 0 14px currentColor,
+      0 0 28px currentColor;
+  }
+}
+
+/* Gentle floating motion */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Slow rotation for decorative elements */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Horizontal ticker / marquee scroll */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Paint drip falling effect */
+@keyframes drip {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Sticker slam/pop-in effect */
+@keyframes sticker-pop {
+  0% {
+    transform: scale(0) rotate(-12deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(var(--sticker-rotation, -1deg));
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   Utility Classes - Neon Text Glow Effects
+   ============================================================ */
+
+@layer utilities {
+  /* --- Neon Green Glow --- */
+  .neon-text-green {
+    color: var(--color-neon-green);
+    text-shadow:
+      0 0 7px var(--color-neon-green),
+      0 0 10px var(--color-neon-green),
+      0 0 21px var(--color-neon-green);
+    animation: neon-flicker 3s infinite;
+  }
+
+  /* --- Neon Hot Pink Glow --- */
+  .neon-text-pink {
+    color: var(--color-hot-pink);
+    text-shadow:
+      0 0 7px var(--color-hot-pink),
+      0 0 10px var(--color-hot-pink),
+      0 0 21px var(--color-hot-pink);
+    animation: neon-flicker 3s infinite;
+  }
+
+  /* --- Neon Purple Glow --- */
+  .neon-text-purple {
+    color: var(--color-neon-purple);
+    text-shadow:
+      0 0 7px var(--color-neon-purple),
+      0 0 10px var(--color-neon-purple),
+      0 0 21px var(--color-neon-purple);
+    animation: neon-flicker 3s infinite;
+  }
+
+  /* --- Neon Yellow Glow --- */
+  .neon-text-yellow {
+    color: var(--color-neon-yellow);
+    text-shadow:
+      0 0 7px var(--color-neon-yellow),
+      0 0 10px var(--color-neon-yellow),
+      0 0 21px var(--color-neon-yellow);
+    animation: neon-flicker 3s infinite;
+  }
+
+  /* --- Spray Paint Text Edge --- */
+  .spray-text {
+    filter: url(#spray-paint);
+  }
+
+  /* --- Grunge Noise Overlay --- */
+  .grunge-overlay {
+    position: relative;
+  }
+
+  .grunge-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+  }
+
+  /* --- Sticker Base Style --- */
+  .sticker {
+    border: 3px solid var(--color-sticker-white);
+    box-shadow:
+      2px 2px 0px rgba(0, 0, 0, 0.3),
+      4px 4px 8px rgba(0, 0, 0, 0.2);
+    transform: rotate(var(--sticker-rotation, -1deg));
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+  }
+
+  .sticker:hover {
+    transform: rotate(0deg) scale(1.05);
+    box-shadow:
+      3px 3px 0px rgba(0, 0, 0, 0.35),
+      6px 6px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  /* --- Tape Strip Accent --- */
+  .tape-strip {
+    position: relative;
+  }
+
+  .tape-strip::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 50px;
+    height: 18px;
+    background: rgba(210, 190, 160, 0.55);
+    transform: rotate(35deg);
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* --- Glass Reflection Pseudo-element --- */
+  .glass-reflection {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-reflection::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.02) 40%,
+      transparent 60%
+    );
+    pointer-events: none;
+    z-index: 1;
+    border-radius: inherit;
+  }
+
+  /* --- Scroll Progress Bar --- */
+  .scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--color-neon-green);
+    z-index: 50;
+    box-shadow: 0 0 8px var(--color-neon-green);
+    transition: width 0.1s linear;
+  }
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+
+@layer base {
+  /* --- Smooth Scrolling --- */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* --- Body Defaults --- */
+  body {
+    background-color: var(--color-bg-void);
+    color: var(--color-sticker-white);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* --- Text Selection --- */
+  ::selection {
+    background-color: var(--color-hot-pink);
+    color: #ffffff;
+  }
+
+  ::-moz-selection {
+    background-color: var(--color-hot-pink);
+    color: #ffffff;
+  }
+
+  /* --- Scrollbar Styling --- */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg-void);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-neon-green);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-bright-teal);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neon-green) var(--color-bg-void);
+  }
 }

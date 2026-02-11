@@ -1,0 +1,194 @@
+/* ============================================================
+   CrustyBets - Neon Effects Module
+   Neon sign, neon border, and neon button styles
+   ============================================================ */
+
+/* --- Neon Sign ---
+   Inline display element styled like a classic neon sign.
+   Pair with neon-text-* utility classes for the glow color.
+   ------------------------------------------------------------ */
+.neonSign {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  position: relative;
+  font-family: var(--font-display, "Bungee Shade", cursive);
+  letter-spacing: 0.05em;
+}
+
+.neonSign::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(57, 255, 20, 0.05) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* --- Neon Border ---
+   Multi-layered box-shadow glow with animated flicker.
+   Apply alongside a color modifier class to set --neon-color.
+   ------------------------------------------------------------ */
+.neonBorder {
+  --neon-color: var(--color-neon-green, #39ff14);
+  border: 2px solid var(--neon-color);
+  box-shadow:
+    0 0 5px var(--neon-color),
+    0 0 10px var(--neon-color),
+    0 0 20px var(--neon-color),
+    inset 0 0 5px rgba(0, 0, 0, 0.3),
+    inset 0 0 10px var(--neon-color);
+  animation: neon-flicker 3s infinite;
+  border-radius: 4px;
+}
+
+/* Color variants */
+.neonBorderPink {
+  --neon-color: var(--color-hot-pink, #ff2d55);
+}
+
+.neonBorderPurple {
+  --neon-color: var(--color-neon-purple, #bc13fe);
+}
+
+.neonBorderYellow {
+  --neon-color: var(--color-neon-yellow, #ffcc00);
+}
+
+.neonBorderTeal {
+  --neon-color: var(--color-bright-teal, #14a3a8);
+}
+
+/* --- Neon Button ---
+   Interactive button with neon glow that intensifies on hover
+   and compresses on click.
+   ------------------------------------------------------------ */
+.neonButton {
+  --neon-color: var(--color-neon-green, #39ff14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  border: 2px solid var(--neon-color);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--neon-color);
+  font-family: var(--font-sticker, "Bangers", cursive);
+  font-size: 1.125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow:
+    0 0 5px var(--neon-color),
+    0 0 10px rgba(57, 255, 20, 0.3),
+    inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.neonButton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--neon-color);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.neonButton:hover {
+  color: var(--color-bg-void, #0a0a0f);
+  box-shadow:
+    0 0 8px var(--neon-color),
+    0 0 20px var(--neon-color),
+    0 0 40px var(--neon-color),
+    inset 0 0 10px rgba(0, 0, 0, 0.15);
+  text-shadow: none;
+}
+
+.neonButton:hover::before {
+  opacity: 1;
+}
+
+/* Ensure text is above the fill overlay */
+.neonButton > * {
+  position: relative;
+  z-index: 1;
+}
+
+.neonButton:active {
+  transform: scale(0.96);
+  box-shadow:
+    0 0 4px var(--neon-color),
+    0 0 8px var(--neon-color),
+    inset 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Button color variants */
+.neonButtonPink {
+  --neon-color: var(--color-hot-pink, #ff2d55);
+}
+
+.neonButtonPurple {
+  --neon-color: var(--color-neon-purple, #bc13fe);
+}
+
+.neonButtonYellow {
+  --neon-color: var(--color-neon-yellow, #ffcc00);
+}
+
+.neonButtonOrange {
+  --neon-color: var(--color-crab-orange, #ff6b35);
+}
+
+/* --- Neon Frame ---
+   Container with neon-lit border lines, suitable for cards
+   and content sections that need a glowing outline.
+   ------------------------------------------------------------ */
+.neonFrame {
+  --neon-color: var(--color-neon-green, #39ff14);
+  position: relative;
+  padding: 2rem;
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  border-radius: 6px;
+  background: rgba(10, 10, 15, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+/* Top and bottom glowing accent lines */
+.neonFrame::before,
+.neonFrame::after {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: var(--neon-color);
+  box-shadow:
+    0 0 6px var(--neon-color),
+    0 0 12px var(--neon-color);
+  animation: neon-flicker 4s infinite;
+}
+
+.neonFrame::before {
+  top: -1px;
+}
+
+.neonFrame::after {
+  bottom: -1px;
+  animation-delay: 1.5s;
+}
+
+/* Frame color variants */
+.neonFramePink {
+  --neon-color: var(--color-hot-pink, #ff2d55);
+  border-color: rgba(255, 45, 85, 0.3);
+}
+
+.neonFramePurple {
+  --neon-color: var(--color-neon-purple, #bc13fe);
+  border-color: rgba(188, 19, 254, 0.3);
+}

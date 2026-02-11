@@ -1,0 +1,133 @@
+/* ============================================================
+   CrustyBets - Sticker Effects Module
+   Stickerpop / die-cut sticker aesthetic for cards and elements
+   ============================================================ */
+
+/* --- Sticker Card ---
+   Base sticker with white border, depth shadow, and slight rotation.
+   Set --rotation on the element for per-sticker variation.
+   ------------------------------------------------------------ */
+.stickerCard {
+  background-color: var(--color-sticker-white, #f5f5f0);
+  color: #1a1a2e;
+  padding: 1.5rem;
+  border-radius: 2px;
+  box-shadow:
+    1px 1px 0px rgba(0, 0, 0, 0.25),
+    3px 3px 0px rgba(0, 0, 0, 0.15),
+    6px 6px 12px rgba(0, 0, 0, 0.2);
+  transform: rotate(var(--rotation, -1deg));
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  will-change: transform, box-shadow;
+}
+
+.stickerCard:hover {
+  transform: rotate(0deg) translateY(-4px) scale(1.02);
+  box-shadow:
+    2px 2px 0px rgba(0, 0, 0, 0.3),
+    5px 5px 0px rgba(0, 0, 0, 0.18),
+    10px 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Sticker Peel ---
+   Corner peel effect using clip-path to simulate a
+   partially lifted sticker corner.
+   ------------------------------------------------------------ */
+.stickerPeel {
+  position: relative;
+  overflow: visible;
+}
+
+.stickerPeel::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(
+    225deg,
+    transparent 50%,
+    rgba(0, 0, 0, 0.06) 50%,
+    rgba(0, 0, 0, 0.04) 56%,
+    var(--color-sticker-white, #f5f5f0) 56%
+  );
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  filter: drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.15));
+  transition: all 0.3s ease;
+}
+
+.stickerPeel:hover::after {
+  width: 55px;
+  height: 55px;
+  filter: drop-shadow(-3px -3px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* --- Sticker Bomb ---
+   Container for overlapping stickers laid out at varied
+   z-indices and rotations, like a sticker-bombed surface.
+   ------------------------------------------------------------ */
+.stickerBomb {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.stickerBomb > *:nth-child(1) {
+  z-index: 5;
+  --rotation: -3deg;
+}
+
+.stickerBomb > *:nth-child(2) {
+  z-index: 3;
+  --rotation: 2deg;
+  margin-left: -12px;
+  margin-top: 8px;
+}
+
+.stickerBomb > *:nth-child(3) {
+  z-index: 7;
+  --rotation: -1deg;
+  margin-left: -8px;
+  margin-top: -6px;
+}
+
+.stickerBomb > *:nth-child(4) {
+  z-index: 2;
+  --rotation: 4deg;
+  margin-left: -16px;
+  margin-top: 12px;
+}
+
+.stickerBomb > *:nth-child(5) {
+  z-index: 6;
+  --rotation: -2deg;
+  margin-left: -10px;
+  margin-top: -4px;
+}
+
+.stickerBomb > *:nth-child(6) {
+  z-index: 4;
+  --rotation: 3deg;
+  margin-left: -14px;
+  margin-top: 6px;
+}
+
+.stickerBomb > *:nth-child(n + 7) {
+  z-index: 1;
+  --rotation: -1.5deg;
+  margin-left: -8px;
+}
+
+/* Ensure sticker children inherit their rotation */
+.stickerBomb > * {
+  transform: rotate(var(--rotation, 0deg));
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stickerBomb > *:hover {
+  z-index: 10 !important;
+  transform: rotate(0deg) scale(1.08);
+}
