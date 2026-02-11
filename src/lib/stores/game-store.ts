@@ -12,6 +12,7 @@ interface GameState {
   clawOpen: boolean;
   isDropping: boolean;
   timeRemaining: number;
+  wonPrize: { name: string; rarity: string; value: number } | null;
 
   // Shell shuffle state
   selectedShell: number | null;
@@ -35,6 +36,8 @@ interface GameState {
   setClawOpen: (open: boolean) => void;
   setIsDropping: (dropping: boolean) => void;
   setTimeRemaining: (time: number) => void;
+  setWonPrize: (prize: { name: string; rarity: string; value: number }) => void;
+  clearWonPrize: () => void;
   setSelectedShell: (shell: number | null) => void;
   setShufflePhase: (phase: 'watching' | 'guessing' | 'revealed' | null) => void;
   setReels: (reels: number[][]) => void;
@@ -55,6 +58,7 @@ const initialState = {
   clawOpen: true,
   isDropping: false,
   timeRemaining: 30,
+  wonPrize: null,
   selectedShell: null,
   shufflePhase: null,
   reels: [],
@@ -92,6 +96,14 @@ export const useGameStore = create<GameState>((set) => ({
     set({ isDropping: dropping });
   },
   setTimeRemaining: (time) => set({ timeRemaining: time }),
+  setWonPrize: (prize) => {
+    console.log('[GameStore] setWonPrize:', prize.name, prize.rarity, prize.value);
+    set({ wonPrize: prize });
+  },
+  clearWonPrize: () => {
+    console.log('[GameStore] clearWonPrize');
+    set({ wonPrize: null });
+  },
   setSelectedShell: (shell) => {
     console.log('[GameStore] setSelectedShell:', shell);
     set({ selectedShell: shell });

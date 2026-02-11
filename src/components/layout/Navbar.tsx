@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 
 const navLinks = [
   { name: 'Games', href: '/lobby', glowColor: '#cc2c18' },
@@ -33,6 +34,7 @@ const LeverSVG = () => (
 );
 
 export default function Navbar() {
+  const { data: session, status } = useSession();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -41,6 +43,8 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const isLoggedIn = status === 'authenticated' && session?.user;
 
   return (
     <nav
@@ -88,25 +92,86 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {/* Coin balance display */}
-          <div
-            className="flex items-center gap-1.5 rounded-full px-3 py-1"
-            style={{
-              border: '1px solid rgba(234,158,43,0.19)',
-            }}
-          >
-            <CoinSVG />
-            <span
-              style={{
-                fontFamily: 'Bangers, cursive',
-                color: '#ea9e2b',
-                fontSize: '0.85rem',
-                letterSpacing: '0.05em',
-              }}
-            >
-              0 CC
-            </span>
-          </div>
+          {isLoggedIn ? (
+            <>
+              {/* User name */}
+              <span
+                className="text-sm"
+                style={{
+                  fontFamily: 'Bangers, cursive',
+                  color: '#f5f5f0',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {session.user.name}
+              </span>
+
+              {/* Coin balance display */}
+              <div
+                className="flex items-center gap-1.5 rounded-full px-3 py-1"
+                style={{
+                  border: '1px solid rgba(234,158,43,0.19)',
+                }}
+              >
+                <CoinSVG />
+                <span
+                  style={{
+                    fontFamily: 'Bangers, cursive',
+                    color: '#ea9e2b',
+                    fontSize: '0.85rem',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {session.user.crustyCoins?.toLocaleString() ?? '0'} CC
+                </span>
+              </div>
+
+              {/* Logout */}
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="px-4 py-1.5 text-sm font-bold uppercase tracking-wider rounded-sm border transition-all hover:scale-105"
+                style={{
+                  fontFamily: 'Bangers, cursive',
+                  borderColor: 'rgba(255,45,85,0.4)',
+                  color: '#ff2d55',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Login */}
+              <Link
+                href="/login"
+                className="px-4 py-1.5 text-sm font-bold uppercase tracking-wider rounded-sm border transition-all hover:scale-105"
+                style={{
+                  fontFamily: 'Bangers, cursive',
+                  borderColor: 'rgba(204,44,24,0.4)',
+                  color: '#cc2c18',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Login
+              </Link>
+
+              {/* Register */}
+              <Link
+                href="/register"
+                className="px-4 py-1.5 text-sm font-bold uppercase tracking-wider rounded-sm border-2 transition-all hover:scale-105"
+                style={{
+                  fontFamily: 'Bangers, cursive',
+                  borderColor: '#39ff14',
+                  color: '#39ff14',
+                  boxShadow: '0 0 10px rgba(57,255,20,0.2)',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Register
+              </Link>
+            </>
+          )}
 
           <Link
             href="/lobby"
@@ -183,23 +248,82 @@ export default function Navbar() {
                 </Link>
               ))}
 
-              {/* Mobile coin balance */}
-              <div
-                className="flex items-center gap-1.5 rounded-full px-3 py-1 self-start"
-                style={{ border: '1px solid rgba(234,158,43,0.19)' }}
-              >
-                <CoinSVG />
-                <span
-                  style={{
-                    fontFamily: 'Bangers, cursive',
-                    color: '#ea9e2b',
-                    fontSize: '0.85rem',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  0 CC
-                </span>
-              </div>
+              {isLoggedIn ? (
+                <>
+                  {/* Mobile user info + balance */}
+                  <div className="flex items-center gap-3 py-2">
+                    <span
+                      style={{
+                        fontFamily: 'Bangers, cursive',
+                        color: '#f5f5f0',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {session.user.name}
+                    </span>
+                    <div
+                      className="flex items-center gap-1.5 rounded-full px-3 py-1"
+                      style={{ border: '1px solid rgba(234,158,43,0.19)' }}
+                    >
+                      <CoinSVG />
+                      <span
+                        style={{
+                          fontFamily: 'Bangers, cursive',
+                          color: '#ea9e2b',
+                          fontSize: '0.85rem',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        {session.user.crustyCoins?.toLocaleString() ?? '0'} CC
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      signOut({ callbackUrl: '/' });
+                    }}
+                    className="inline-block px-6 py-3 text-lg font-bold uppercase text-center rounded-sm border mt-2"
+                    style={{
+                      fontFamily: 'Bangers, cursive',
+                      borderColor: 'rgba(255,45,85,0.4)',
+                      color: '#ff2d55',
+                    }}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Mobile auth links */}
+                  <div className="flex gap-3 mt-2">
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex-1 px-4 py-3 text-lg font-bold uppercase text-center rounded-sm border"
+                      style={{
+                        fontFamily: 'Bangers, cursive',
+                        borderColor: 'rgba(204,44,24,0.4)',
+                        color: '#cc2c18',
+                      }}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex-1 px-4 py-3 text-lg font-bold uppercase text-center rounded-sm border-2"
+                      style={{
+                        fontFamily: 'Bangers, cursive',
+                        borderColor: '#39ff14',
+                        color: '#39ff14',
+                      }}
+                    >
+                      Register
+                    </Link>
+                  </div>
+                </>
+              )}
 
               <Link
                 href="/lobby"

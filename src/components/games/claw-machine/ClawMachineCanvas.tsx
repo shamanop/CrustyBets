@@ -14,7 +14,11 @@ const RARITY_COLORS: Record<string, string> = {
   legendary: '#f59e0b',
 };
 
-export default function ClawMachineCanvas() {
+interface ClawMachineCanvasProps {
+  onPrizeWon?: (prize: Prize) => void;
+}
+
+export default function ClawMachineCanvas({ onPrizeWon }: ClawMachineCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<ClawPhysicsEngine | null>(null);
   const animFrameRef = useRef<number>(0);
@@ -48,6 +52,7 @@ export default function ClawMachineCanvas() {
     engine.onPrizeWon = (prize) => {
       console.log('[ClawMachineCanvas] prize won callback:', prize.name, 'value:', prize.value);
       setWonPrize(prize);
+      onPrizeWon?.(prize);
     };
 
     engine.start();

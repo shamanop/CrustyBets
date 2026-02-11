@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { agents, gameSessions, transactions } from '@/lib/db/schema';
+import { agents, users, gameSessions, transactions } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { generateServerSeed, generateSlotOutcome, hashServerSeed } from '@/lib/games/provably-fair';
 import { createLogger } from '@/lib/logger';
+import { auth } from '@/lib/auth';
 
 const log = createLogger('API:LobsterSlotsSpin');
 
@@ -58,34 +59,64 @@ function calculateWin(reels: number[], bet: number): { payout: number; matches: 
   return { payout: 0, matches: 0, symbol: null };
 }
 
-export async function POST(request: Request) {
-  log.info('POST /api/games/lobster-slots/spin - Spin request received');
-  try {
-    const apiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '');
-
-    if (!apiKey) {
-      log.warn('Spin rejected - no API key provided');
-      return NextResponse.json({ success: false, error: 'API key required' }, { status: 401 });
-    }
-
-    log.debug('Querying agent by API key');
+// Resolve the authenticated player: either an agent (API key) or a user (session)
+async function resolvePlayer(request: Request): Promise<
+  | { type: 'agent'; id: string; crustyCoins: number; table: typeof agents }
+  | { type: 'user'; id: string; crustyCoins: number; table: typeof users }
+  | null
+> {
+  // 1. Check for API key (agent auth)
+  const apiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '');
+  if (apiKey) {
+    log.debug('Attempting agent auth via API key');
     const agent = await db.query.agents.findFirst({
       where: (a, { eq }) => eq(a.apiKey, apiKey),
     });
+    if (agent) {
+      log.debug('Agent authenticated', { agentId: agent.id, name: agent.name, balance: agent.crustyCoins });
+      return { type: 'agent', id: agent.id, crustyCoins: agent.crustyCoins, table: agents };
+    }
+    log.warn('Invalid API key provided');
+    return null;
+  }
 
-    if (!agent) {
-      log.warn('Spin rejected - invalid API key');
-      return NextResponse.json({ success: false, error: 'Invalid API key' }, { status: 401 });
+  // 2. Check for next-auth session (user auth)
+  try {
+    const session = await auth();
+    if (session?.user?.id) {
+      log.debug('Attempting session auth', { userId: session.user.id });
+      const user = await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, session.user.id),
+      });
+      if (user) {
+        log.debug('User authenticated via session', { userId: user.id, name: user.name, balance: user.crustyCoins });
+        return { type: 'user', id: user.id, crustyCoins: user.crustyCoins, table: users };
+      }
+      log.warn('Session user not found in database', { userId: session.user.id });
+    }
+  } catch (err) {
+    log.error('Session auth check failed', { error: err instanceof Error ? err.message : err });
+  }
+
+  return null;
+}
+
+export async function POST(request: Request) {
+  log.info('POST /api/games/lobster-slots/spin - Spin request received');
+  try {
+    const player = await resolvePlayer(request);
+
+    if (!player) {
+      log.warn('Spin rejected - no valid authentication');
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
 
-    log.debug('Agent authenticated', { agentId: agent.id, name: agent.name, balance: agent.crustyCoins });
-
     const body = await request.json();
-    log.debug('Spin request params', { bet: body.bet, lines: body.lines });
+    log.debug('Spin request params', { bet: body.bet, lines: body.lines, playerType: player.type, playerId: player.id });
     const parsed = spinSchema.safeParse(body);
 
     if (!parsed.success) {
-      log.warn('Spin validation failed', { agentId: agent.id, errors: parsed.error.flatten() });
+      log.warn('Spin validation failed', { playerId: player.id, errors: parsed.error.flatten() });
       return NextResponse.json(
         { success: false, error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
@@ -95,10 +126,10 @@ export async function POST(request: Request) {
     const { bet, lines } = parsed.data;
     const totalBet = bet * lines;
 
-    if (agent.crustyCoins < totalBet) {
-      log.warn('Spin rejected - insufficient balance', { agentId: agent.id, required: totalBet, available: agent.crustyCoins });
+    if (player.crustyCoins < totalBet) {
+      log.warn('Spin rejected - insufficient balance', { playerId: player.id, required: totalBet, available: player.crustyCoins });
       return NextResponse.json(
-        { success: false, error: `Insufficient CrustyCoins. Need ${totalBet}, have ${agent.crustyCoins}.` },
+        { success: false, error: `Insufficient CrustyCoins. Need ${totalBet}, have ${player.crustyCoins}.` },
         { status: 400 }
       );
     }
@@ -118,31 +149,53 @@ export async function POST(request: Request) {
     const { payout, matches, symbol } = calculateWin(reels, totalBet);
     log.debug('Win calculation complete', { sessionId, payout, matches, winningSymbol: symbol !== null ? SYMBOLS[symbol].name : null });
 
-    // Deduct bet
-    log.debug('Deducting bet', { agentId: agent.id, totalBet });
-    await db.update(agents)
-      .set({ crustyCoins: sql`${agents.crustyCoins} - ${totalBet}` })
-      .where(eq(agents.id, agent.id));
+    // Deduct bet from the correct table
+    log.debug('Deducting bet', { playerId: player.id, playerType: player.type, totalBet });
+    if (player.type === 'agent') {
+      await db.update(agents)
+        .set({ crustyCoins: sql`${agents.crustyCoins} - ${totalBet}` })
+        .where(eq(agents.id, player.id));
+    } else {
+      await db.update(users)
+        .set({ crustyCoins: sql`${users.crustyCoins} - ${totalBet}`, updatedAt: now })
+        .where(eq(users.id, player.id));
+    }
 
     // Add winnings if any
     if (payout > 0) {
-      log.debug('Crediting payout', { agentId: agent.id, payout });
-      await db.update(agents)
-        .set({ crustyCoins: sql`${agents.crustyCoins} + ${payout}` })
-        .where(eq(agents.id, agent.id));
+      log.debug('Crediting payout', { playerId: player.id, playerType: player.type, payout });
+      if (player.type === 'agent') {
+        await db.update(agents)
+          .set({ crustyCoins: sql`${agents.crustyCoins} + ${payout}` })
+          .where(eq(agents.id, player.id));
+      } else {
+        await db.update(users)
+          .set({ crustyCoins: sql`${users.crustyCoins} + ${payout}`, updatedAt: now })
+          .where(eq(users.id, player.id));
+      }
     }
 
-    const updatedAgent = await db.query.agents.findFirst({
-      where: (a, { eq }) => eq(a.id, agent.id),
-    });
+    // Fetch updated balance
+    let updatedBalance: number;
+    if (player.type === 'agent') {
+      const updatedAgent = await db.query.agents.findFirst({
+        where: (a, { eq }) => eq(a.id, player.id),
+      });
+      updatedBalance = updatedAgent!.crustyCoins;
+    } else {
+      const updatedUser = await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, player.id),
+      });
+      updatedBalance = updatedUser!.crustyCoins;
+    }
 
     // Record game session
     log.debug('Recording game session', { sessionId, gameType: 'lobster-slots' });
     await db.insert(gameSessions).values({
       id: sessionId,
       gameType: 'lobster-slots',
-      playerId: agent.id,
-      playerType: 'agent',
+      playerId: player.id,
+      playerType: player.type,
       status: 'completed',
       betAmount: totalBet,
       payout,
@@ -159,11 +212,11 @@ export async function POST(request: Request) {
     log.debug('Recording bet transaction', { sessionId, amount: -totalBet });
     await db.insert(transactions).values({
       id: nanoid(),
-      playerId: agent.id,
-      playerType: 'agent',
+      playerId: player.id,
+      playerType: player.type,
       type: 'bet',
       amount: -totalBet,
-      balanceAfter: updatedAgent!.crustyCoins - (payout > 0 ? payout : 0), // approximate
+      balanceAfter: updatedBalance - (payout > 0 ? payout : 0), // balance before win credit
       gameSessionId: sessionId,
       description: `Lobster Slots spin: ${totalBet} CC`,
       createdAt: now,
@@ -173,18 +226,18 @@ export async function POST(request: Request) {
       log.debug('Recording win transaction', { sessionId, payout });
       await db.insert(transactions).values({
         id: nanoid(),
-        playerId: agent.id,
-        playerType: 'agent',
+        playerId: player.id,
+        playerType: player.type,
         type: 'win',
         amount: payout,
-        balanceAfter: updatedAgent!.crustyCoins,
+        balanceAfter: updatedBalance,
         gameSessionId: sessionId,
         description: `Lobster Slots win: ${matches}x ${symbol !== null ? SYMBOLS[symbol].name : 'match'}!`,
         createdAt: now,
       });
     }
 
-    log.info('Spin completed', { agentId: agent.id, sessionId, bet: totalBet, payout, netResult: payout - totalBet, newBalance: updatedAgent!.crustyCoins, status: 200 });
+    log.info('Spin completed', { playerId: player.id, playerType: player.type, sessionId, bet: totalBet, payout, netResult: payout - totalBet, newBalance: updatedBalance, status: 200 });
     return NextResponse.json({
       success: true,
       data: {
@@ -195,7 +248,7 @@ export async function POST(request: Request) {
         netResult: payout - totalBet,
         matches,
         winningSymbol: symbol !== null ? SYMBOLS[symbol].name : null,
-        balance: updatedAgent!.crustyCoins,
+        balance: updatedBalance,
         provablyFair: {
           serverSeedHash,
           clientSeed,

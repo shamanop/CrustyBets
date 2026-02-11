@@ -1,65 +1,102 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+
+interface ClaimResult {
+  success: boolean;
+  amount?: number;
+  error?: string;
+  nextClaimAt?: number;
+  remainingSeconds?: number;
+}
 
 export function useCrustyCoins() {
-  const [balance, setBalance] = useState<number>(0);
+  const { data: session, status, update: updateSession } = useSession();
+  const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Sync from session when available
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      setIsAuthenticated(true);
+      // Use session balance as initial / fallback
+      if (balance === null && session.user.crustyCoins !== undefined) {
+        setBalance(session.user.crustyCoins);
+      }
+      setLoading(false);
+    } else if (status === 'unauthenticated') {
+      setIsAuthenticated(false);
+      setBalance(null);
+      setLoading(false);
+    }
+  }, [status, session]);
 
   const fetchBalance = useCallback(async () => {
-    console.log('[useCrustyCoins] fetching balance...');
     try {
-      const res = await fetch('/api/economy/balance');
+      const res = await fetch('/api/session/balance', { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
-        console.log('[useCrustyCoins] balance fetched successfully:', data.data.balance);
         setBalance(data.data.balance);
-      } else {
-        console.warn('[useCrustyCoins] balance fetch returned unsuccessful response:', data);
+        setIsAuthenticated(true);
+      } else if (res.status === 401) {
+        // Fall back to session balance if the balance API isn't set up
+        if (session?.user?.crustyCoins !== undefined) {
+          setBalance(session.user.crustyCoins);
+          setIsAuthenticated(true);
+        } else {
+          setBalance(null);
+          setIsAuthenticated(false);
+        }
       }
     } catch (err) {
       console.error('[useCrustyCoins] failed to fetch balance:', err);
+      // Fall back to session balance on error
+      if (session?.user?.crustyCoins !== undefined) {
+        setBalance(session.user.crustyCoins);
+        setIsAuthenticated(true);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     fetchBalance();
   }, [fetchBalance]);
 
-  const claimDaily = useCallback(async () => {
-    console.log('[useCrustyCoins] claiming daily reward...');
+  const claimDaily = useCallback(async (): Promise<ClaimResult> => {
     try {
-      const res = await fetch('/api/economy/claim-daily', { method: 'POST' });
+      const res = await fetch('/api/session/claim-daily', {
+        method: 'POST',
+        credentials: 'include',
+      });
       const data = await res.json();
       if (data.success) {
-        console.log('[useCrustyCoins] daily reward claimed, amount:', data.data.amount, 'new balance:', data.data.balance);
         setBalance(data.data.balance);
+        // Refresh the NextAuth session to sync crustyCoins
+        await updateSession();
         return { success: true, amount: data.data.amount };
       }
-      console.warn('[useCrustyCoins] daily claim failed:', data.error);
-      return { success: false, error: data.error };
+      return {
+        success: false,
+        error: data.error,
+        nextClaimAt: data.data?.nextClaimAt,
+        remainingSeconds: data.data?.remainingSeconds,
+      };
     } catch (err) {
       console.error('[useCrustyCoins] daily claim network error:', err);
       return { success: false, error: 'Network error' };
     }
-  }, []);
+  }, [updateSession]);
 
   const deduct = useCallback((amount: number) => {
-    console.log('[useCrustyCoins] deducting:', amount);
-    setBalance((prev) => {
-      console.log('[useCrustyCoins] balance after deduct:', prev - amount);
-      return prev - amount;
-    });
+    setBalance((prev) => (prev !== null ? prev - amount : prev));
   }, []);
 
   const credit = useCallback((amount: number) => {
-    console.log('[useCrustyCoins] crediting:', amount);
-    setBalance((prev) => {
-      console.log('[useCrustyCoins] balance after credit:', prev + amount);
-      return prev + amount;
-    });
+    setBalance((prev) => (prev !== null ? prev + amount : prev));
   }, []);
 
-  return { balance, loading, fetchBalance, claimDaily, deduct, credit };
+  return { balance, loading, isAuthenticated, fetchBalance, claimDaily, deduct, credit };
 }

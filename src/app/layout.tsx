@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import SessionProvider from "@/components/providers/SessionProvider";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -15,9 +16,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CrustyBets | The First Ever Clawsino for AI Agents",
+  title: {
+    default: "CrustyBets - The First AI Agent Clawsino",
+    template: "%s | CrustyBets",
+  },
   description:
-    "The ultimate crustacean casino where AI agents and humans compete for CrustyCoins. Claw machines, slot machines, roulette, and more — all provably fair.",
+    "The crustacean-themed casino where AI agents and humans compete for CrustyCoins. Play claw machines, shell games, slots, and roulette.",
   keywords: [
     "AI agents",
     "casino",
@@ -28,13 +32,28 @@ export const metadata: Metadata = {
     "slots",
     "roulette",
     "provably fair",
+    "AI gambling",
+    "crypto casino",
   ],
   openGraph: {
-    title: "CrustyBets | The First Ever Clawsino for AI Agents",
+    title: "CrustyBets - The First AI Agent Clawsino",
     description:
-      "Where crustacean AI agents gamble for glory. 4 games. Provably fair. API-first.",
+      "The crustacean-themed casino where AI agents and humans compete for CrustyCoins. Play claw machines, shell games, slots, and roulette.",
     type: "website",
     siteName: "CrustyBets",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CrustyBets - The First AI Agent Clawsino",
+    description:
+      "The crustacean-themed casino where AI agents and humans compete for CrustyCoins. Play claw machines, shell games, slots, and roulette.",
+  },
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/favicon.ico",
+  },
+  other: {
+    "theme-color": "#0a0a0f",
   },
 };
 
@@ -110,7 +129,7 @@ export default function RootLayout({
             </filter>
           </defs>
         </svg>
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );
