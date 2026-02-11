@@ -4,10 +4,33 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 const navLinks = [
-  { name: 'Games', href: '/lobby' },
-  { name: 'Leaderboard', href: '/leaderboard' },
-  { name: 'API Docs', href: '/docs' },
+  { name: 'Games', href: '/lobby', glowColor: '#cc2c18' },
+  { name: 'Leaderboard', href: '/leaderboard', glowColor: '#ea9e2b' },
+  { name: 'API Docs', href: '/docs', glowColor: '#39ff14' },
 ];
+
+/* Small inline SVGs used in the navbar */
+const CoinSVG = () => (
+  <svg width="20" height="20" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline-block shrink-0">
+    <defs>
+      <linearGradient id="nav-gcoin" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#f5d442" />
+        <stop offset="50%" stopColor="#ea9e2b" />
+        <stop offset="100%" stopColor="#c47a1a" />
+      </linearGradient>
+    </defs>
+    <circle cx="30" cy="30" r="28" fill="url(#nav-gcoin)" stroke="#c47a1a" strokeWidth="3" />
+    <circle cx="30" cy="30" r="22" fill="none" stroke="#f5d442" strokeWidth="1.5" strokeDasharray="4 3" />
+    <text x="30" y="36" textAnchor="middle" fill="#7a4a0a" fontSize="18" fontWeight="bold" fontFamily="Bangers, cursive">CC</text>
+  </svg>
+);
+
+const LeverSVG = () => (
+  <svg width="10" height="16" viewBox="0 0 10 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline-block ml-1">
+    <circle cx="5" cy="4" r="3.5" fill="#cc2c18" stroke="#8b1a10" strokeWidth="1" />
+    <rect x="3.5" y="7" width="3" height="12" rx="1" fill="#cc2c18" stroke="#8b1a10" strokeWidth="0.8" />
+  </svg>
+);
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -43,6 +66,7 @@ export default function Navbar() {
             }}
           >
             CRUSTY
+            <LeverSVG />
           </span>
         </Link>
 
@@ -52,12 +76,38 @@ export default function Navbar() {
             <Link
               key={link.name}
               href={link.href}
-              className="text-sm uppercase tracking-wider opacity-70 hover:opacity-100 transition-opacity"
-              style={{ fontFamily: 'Bangers, cursive', color: '#f5f5f0', letterSpacing: '0.1em' }}
+              className="nav-link-glow text-sm uppercase tracking-wider opacity-70 hover:opacity-100 transition-all"
+              style={{
+                fontFamily: 'Bangers, cursive',
+                color: '#f5f5f0',
+                letterSpacing: '0.1em',
+                '--glow-color': link.glowColor,
+              } as React.CSSProperties}
             >
               {link.name}
             </Link>
           ))}
+
+          {/* Coin balance display */}
+          <div
+            className="flex items-center gap-1.5 rounded-full px-3 py-1"
+            style={{
+              border: '1px solid rgba(234,158,43,0.19)',
+            }}
+          >
+            <CoinSVG />
+            <span
+              style={{
+                fontFamily: 'Bangers, cursive',
+                color: '#ea9e2b',
+                fontSize: '0.85rem',
+                letterSpacing: '0.05em',
+              }}
+            >
+              0 CC
+            </span>
+          </div>
+
           <Link
             href="/lobby"
             className="px-5 py-2 text-sm font-bold uppercase tracking-wider rounded-sm border-2 transition-all hover:scale-105"
@@ -72,6 +122,13 @@ export default function Navbar() {
             Play Now
           </Link>
         </div>
+
+        {/* Nav link hover glow styles */}
+        <style>{`
+          .nav-link-glow:hover {
+            text-shadow: 0 0 8px var(--glow-color), 0 0 16px var(--glow-color);
+          }
+        `}</style>
 
         {/* Mobile Menu Button */}
         <button
@@ -115,12 +172,35 @@ export default function Navbar() {
                   key={link.name}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="text-lg uppercase tracking-wider py-2"
-                  style={{ fontFamily: 'Bangers, cursive', color: '#f5f5f0' }}
+                  className="nav-link-glow text-lg uppercase tracking-wider py-2 transition-all"
+                  style={{
+                    fontFamily: 'Bangers, cursive',
+                    color: '#f5f5f0',
+                    '--glow-color': link.glowColor,
+                  } as React.CSSProperties}
                 >
                   {link.name}
                 </Link>
               ))}
+
+              {/* Mobile coin balance */}
+              <div
+                className="flex items-center gap-1.5 rounded-full px-3 py-1 self-start"
+                style={{ border: '1px solid rgba(234,158,43,0.19)' }}
+              >
+                <CoinSVG />
+                <span
+                  style={{
+                    fontFamily: 'Bangers, cursive',
+                    color: '#ea9e2b',
+                    fontSize: '0.85rem',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  0 CC
+                </span>
+              </div>
+
               <Link
                 href="/lobby"
                 onClick={() => setMobileOpen(false)}
