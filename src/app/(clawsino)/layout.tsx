@@ -1,5 +1,5 @@
 'use client';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,21 @@ const sidebarLinks = [
 export default function ClawsinoLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    console.log('[ClawsinoLayout] mounted, pathname:', pathname);
+    return () => {
+      console.log('[ClawsinoLayout] unmounted');
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('[ClawsinoLayout] pathname changed:', pathname);
+  }, [pathname]);
+
+  useEffect(() => {
+    console.log('[ClawsinoLayout] sidebar toggled, open:', sidebarOpen);
+  }, [sidebarOpen]);
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0f' }}>

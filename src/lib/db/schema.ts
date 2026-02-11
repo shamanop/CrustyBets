@@ -130,6 +130,17 @@ export const playerInventoryRelations = relations(playerInventory, ({ one }) => 
   }),
 }));
 
+// ─── Debug Logs ──────────────────────────────────────────────────────────────
+
+export const debugLogs = sqliteTable('debug_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  level: text('level').notNull(), // 'info' | 'warn' | 'error' | 'debug'
+  module: text('module').notNull(),
+  message: text('message').notNull(),
+  data: text('data'), // JSON stringified extra data
+  timestamp: integer('timestamp').notNull(),
+});
+
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
 
 export const leaderboard = sqliteTable('leaderboard', {

@@ -65,12 +65,18 @@ export class ClawPhysicsEngine {
   config: ClawMachineConfig;
 
   constructor(config: ClawMachineConfig) {
+    console.log('[ClawPhysicsEngine] initializing with config:', JSON.stringify(config));
     this.config = config;
     const { width, height } = config;
 
-    this.engine = Matter.Engine.create({
-      gravity: { x: 0, y: 1.5, scale: 0.001 },
-    });
+    try {
+      this.engine = Matter.Engine.create({
+        gravity: { x: 0, y: 1.5, scale: 0.001 },
+      });
+    } catch (err) {
+      console.error('[ClawPhysicsEngine] failed to create Matter.Engine:', err);
+      throw err;
+    }
     this.world = this.engine.world;
 
     // Walls
@@ -156,8 +162,10 @@ export class ClawPhysicsEngine {
       this.leftHinge,
       this.rightHinge,
     ]);
+    console.log('[ClawPhysicsEngine] world bodies added (walls, chute, claw assembly)');
 
     // Generate prizes
+    console.log('[ClawPhysicsEngine] generating', config.prizeCount, 'prizes');
     this.generatePrizes(config.prizeCount);
 
     // Collision detection for drop chute
@@ -167,6 +175,7 @@ export class ClawPhysicsEngine {
           const prizeBody = pair.bodyA.label === 'drop-chute' ? pair.bodyB : pair.bodyA;
           const prize = this.prizes.find(p => p.body.id === prizeBody.id);
           if (prize) {
+            console.log('[ClawPhysicsEngine] prize won!', prize.name, '(rarity:', prize.rarity, ', value:', prize.value, ')');
             this.onPrizeWon?.(prize);
           }
         }
@@ -226,7 +235,11 @@ export class ClawPhysicsEngine {
   }
 
   dropClaw() {
-    if (this.isDropping) return;
+    if (this.isDropping) {
+      console.log('[ClawPhysicsEngine] dropClaw ignored (already dropping)');
+      return;
+    }
+    console.log('[ClawPhysicsEngine] dropping claw');
     this.isDropping = true;
 
     // Extend cable length to drop
@@ -244,6 +257,7 @@ export class ClawPhysicsEngine {
   }
 
   grab() {
+    console.log('[ClawPhysicsEngine] grabbing');
     this.isGrabbing = true;
     this.clawOpen = false;
 
@@ -260,6 +274,7 @@ export class ClawPhysicsEngine {
   }
 
   retract() {
+    console.log('[ClawPhysicsEngine] retracting claw');
     const minLength = 50;
     const step = () => {
       if (this.cable.length > minLength) {
@@ -275,6 +290,7 @@ export class ClawPhysicsEngine {
   }
 
   release() {
+    console.log('[ClawPhysicsEngine] releasing claw');
     this.isGrabbing = false;
     this.clawOpen = true;
 
@@ -284,11 +300,13 @@ export class ClawPhysicsEngine {
   }
 
   start() {
+    console.log('[ClawPhysicsEngine] starting physics runner');
     this.runner = Matter.Runner.create();
     Matter.Runner.run(this.runner, this.engine);
   }
 
   stop() {
+    console.log('[ClawPhysicsEngine] stopping physics runner');
     if (this.runner) {
       Matter.Runner.stop(this.runner);
     }
@@ -313,8 +331,10 @@ export class ClawPhysicsEngine {
   }
 
   destroy() {
+    console.log('[ClawPhysicsEngine] destroying engine');
     this.stop();
     Matter.Engine.clear(this.engine);
     Matter.Composite.clear(this.world, false);
+    console.log('[ClawPhysicsEngine] engine destroyed');
   }
 }

@@ -1,10 +1,31 @@
 import type { GameSession, PlayerType } from '@/types';
+import { createLogger } from '@/lib/logger';
+
+/**
+ * Logger instance for game engine implementations.
+ * Import and use in concrete engine classes:
+ *   `const log = engineLogger;`
+ *
+ * Log key lifecycle events:
+ * - Session creation (playerId, betAmount)
+ * - State transitions (sessionId, old status -> new status)
+ * - Move processing (sessionId, move type)
+ * - Game results (sessionId, outcome, payout)
+ * - Session end / timeout (sessionId, reason)
+ */
+export const engineLogger = createLogger('GAME_ENGINE');
 
 /**
  * Abstract game engine interface.
  *
  * Each casino game (Claw Machine, Shell Shuffle, Lobster Slots, Crab Roulette)
  * implements this interface with its own state, move, and result types.
+ *
+ * Implementations SHOULD use {@link engineLogger} to log:
+ * - `createSession`: log playerId, betAmount, generated sessionId
+ * - `getState`: log sessionId, whether view is player-filtered
+ * - `processMove`: log sessionId, move details, resulting state/result
+ * - `endSession`: log sessionId, reason, final result
  *
  * @typeParam TState  - The game-specific state shape sent to clients.
  * @typeParam TMove   - The shape of a player action / move.
@@ -13,6 +34,7 @@ import type { GameSession, PlayerType } from '@/types';
 export interface GameEngine<TState, TMove, TResult> {
   /**
    * Create a new game session, deduct the bet, and return the persisted session.
+   * Log: playerId, playerType, betAmount, resulting sessionId.
    */
   createSession(
     playerId: string,
@@ -24,12 +46,14 @@ export interface GameEngine<TState, TMove, TResult> {
    * Return the current game state for a session.
    * If `forPlayer` is provided, sensitive fields (e.g. server seed, pearl
    * position) are stripped before returning.
+   * Log: sessionId, forPlayer presence.
    */
   getState(sessionId: string, forPlayer?: string): Promise<TState>;
 
   /**
    * Process a player's move and return the updated state.
    * If the move concludes the game, `result` will be populated.
+   * Log: sessionId, move, whether result was produced.
    */
   processMove(
     sessionId: string,
@@ -38,6 +62,7 @@ export interface GameEngine<TState, TMove, TResult> {
 
   /**
    * Force-end a session (e.g. on timeout or disconnect) and return the result.
+   * Log: sessionId, reason for ending, final result.
    */
   endSession(sessionId: string): Promise<TResult>;
 }

@@ -27,11 +27,16 @@ type SoundName = keyof typeof SOUNDS;
 
 function getOrCreateSound(name: SoundName): Howl {
   if (!soundCache.has(name)) {
-    soundCache.set(name, new Howl({
+    console.log('[useSound] creating new Howl instance for:', name, 'src:', SOUNDS[name]);
+    const howl = new Howl({
       src: [SOUNDS[name]],
       preload: false,
       volume: 0.5,
-    }));
+      onload: () => console.log('[useSound] sound loaded successfully:', name),
+      onloaderror: (_id, err) => console.error('[useSound] sound load error:', name, err),
+      onplayerror: (_id, err) => console.error('[useSound] sound play error:', name, err),
+    });
+    soundCache.set(name, howl);
   }
   return soundCache.get(name)!;
 }
@@ -41,18 +46,24 @@ export function useSound() {
   const volume = useUIStore((s) => s.volume);
 
   const play = useCallback((name: SoundName) => {
-    if (!soundEnabled) return;
+    if (!soundEnabled) {
+      console.log('[useSound] play suppressed (sound disabled):', name);
+      return;
+    }
+    console.log('[useSound] playing:', name, 'at volume:', volume);
     const sound = getOrCreateSound(name);
     sound.volume(volume);
     sound.play();
   }, [soundEnabled, volume]);
 
   const stop = useCallback((name: SoundName) => {
+    console.log('[useSound] stopping:', name);
     const sound = soundCache.get(name);
     if (sound) sound.stop();
   }, []);
 
   const stopAll = useCallback(() => {
+    console.log('[useSound] stopping all sounds, cached count:', soundCache.size);
     soundCache.forEach((sound) => sound.stop());
   }, []);
 

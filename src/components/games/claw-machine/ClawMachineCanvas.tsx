@@ -32,20 +32,30 @@ export default function ClawMachineCanvas() {
 
   // Initialize physics engine
   useEffect(() => {
-    const engine = new ClawPhysicsEngine({
-      width: MACHINE_WIDTH,
-      height: MACHINE_HEIGHT,
-      prizeCount: 15,
-    });
+    console.log('[ClawMachineCanvas] mounted, initializing physics engine');
+    let engine: ClawPhysicsEngine;
+    try {
+      engine = new ClawPhysicsEngine({
+        width: MACHINE_WIDTH,
+        height: MACHINE_HEIGHT,
+        prizeCount: 15,
+      });
+    } catch (err) {
+      console.error('[ClawMachineCanvas] failed to create physics engine:', err);
+      return;
+    }
 
     engine.onPrizeWon = (prize) => {
+      console.log('[ClawMachineCanvas] prize won callback:', prize.name, 'value:', prize.value);
       setWonPrize(prize);
     };
 
     engine.start();
     engineRef.current = engine;
+    console.log('[ClawMachineCanvas] physics engine started successfully');
 
     return () => {
+      console.log('[ClawMachineCanvas] unmounting, destroying physics engine');
       engine.destroy();
       cancelAnimationFrame(animFrameRef.current);
     };
@@ -55,7 +65,11 @@ export default function ClawMachineCanvas() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx) {
+      console.error('[ClawMachineCanvas] canvas or 2d context unavailable');
+      return;
+    }
+    console.log('[ClawMachineCanvas] render loop starting');
 
     const render = () => {
       const engine = engineRef.current;
@@ -197,7 +211,11 @@ export default function ClawMachineCanvas() {
 
   // Keyboard controls
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying) {
+      console.log('[ClawMachineCanvas] keyboard controls inactive (not playing)');
+      return;
+    }
+    console.log('[ClawMachineCanvas] keyboard controls activated');
 
     const keys = new Set<string>();
 
@@ -206,6 +224,7 @@ export default function ClawMachineCanvas() {
 
       if (e.key === ' ' && !isDropping) {
         e.preventDefault();
+        console.log('[ClawMachineCanvas] spacebar pressed - initiating claw drop');
         engineRef.current?.dropClaw();
         setIsDropping(true);
       }
@@ -234,7 +253,12 @@ export default function ClawMachineCanvas() {
 
   // Timer
   useEffect(() => {
-    if (!isPlaying || timeRemaining <= 0) return;
+    if (!isPlaying || timeRemaining <= 0) {
+      if (isPlaying && timeRemaining <= 0) {
+        console.log('[ClawMachineCanvas] game timer expired');
+      }
+      return;
+    }
 
     const timer = setInterval(() => {
       setTimeRemaining(timeRemaining - 1);

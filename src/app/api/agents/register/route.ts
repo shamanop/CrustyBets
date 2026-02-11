@@ -3,6 +3,9 @@ import { db } from '@/lib/db';
 import { agents, users, transactions } from '@/lib/db/schema';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('API:AgentRegister');
 
 const registerSchema = z.object({
   name: z.string().min(1).max(50),
@@ -10,11 +13,14 @@ const registerSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  log.info('POST /api/agents/register - Registration attempt received');
   try {
     const body = await request.json();
+    log.debug('Request body', { name: body.name, hasEmail: !!body.email });
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
+      log.warn('Validation failed', { errors: parsed.error.flatten() });
       return NextResponse.json(
         { success: false, error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
@@ -25,17 +31,21 @@ export async function POST(request: Request) {
     const agentId = nanoid();
     const apiKey = `ck_live_${nanoid(32)}`;
     const now = Math.floor(Date.now() / 1000);
+    log.debug('Generated agent credentials', { agentId, name });
 
     // Create a user if email provided
     let userId = agentId; // Default: agent is its own user
     if (email) {
+      log.debug('Looking up existing user by email');
       const existingUser = await db.query.users.findFirst({
         where: (u, { eq }) => eq(u.email, email),
       });
       if (existingUser) {
         userId = existingUser.id;
+        log.debug('Found existing user', { userId });
       } else {
         userId = nanoid();
+        log.debug('Creating new user', { userId });
         await db.insert(users).values({
           id: userId,
           email,
@@ -44,10 +54,12 @@ export async function POST(request: Request) {
           createdAt: now,
           updatedAt: now,
         });
+        log.debug('New user created successfully', { userId });
       }
     }
 
     // Create agent
+    log.debug('Inserting agent record', { agentId, userId });
     await db.insert(agents).values({
       id: agentId,
       userId,
@@ -58,8 +70,10 @@ export async function POST(request: Request) {
       createdAt: now,
       lastActiveAt: now,
     });
+    log.debug('Agent record created successfully');
 
     // Record signup bonus transaction
+    log.debug('Recording signup bonus transaction', { agentId, amount: 100 });
     await db.insert(transactions).values({
       id: nanoid(),
       playerId: agentId,
@@ -71,6 +85,7 @@ export async function POST(request: Request) {
       createdAt: now,
     });
 
+    log.info('Registration successful', { agentId, name, userId, status: 201 });
     return NextResponse.json({
       success: true,
       data: {
@@ -82,7 +97,7 @@ export async function POST(request: Request) {
       },
     }, { status: 201 });
   } catch (error) {
-    console.error('Agent registration error:', error);
+    log.error('Agent registration error', { error: error instanceof Error ? error.stack : error });
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

@@ -38,6 +38,8 @@ export const metadata: Metadata = {
   },
 };
 
+console.log('[RootLayout] rendering');
+
 export default function RootLayout({
   children,
 }: Readonly<{

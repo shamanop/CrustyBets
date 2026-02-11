@@ -24,10 +24,28 @@ export const useUIStore = create<UIState>((set) => ({
   showWallet: true,
   activeModal: null,
 
-  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-  setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
-  setMusicEnabled: (enabled) => set({ musicEnabled: enabled }),
-  setVolume: (volume) => set({ volume }),
-  setShowWallet: (show) => set({ showWallet: show }),
-  setActiveModal: (modal) => set({ activeModal: modal }),
+  toggleSidebar: () => set((state) => {
+    console.log('[UIStore] toggleSidebar:', !state.sidebarOpen);
+    return { sidebarOpen: !state.sidebarOpen };
+  }),
+  setSoundEnabled: (enabled) => {
+    console.log('[UIStore] setSoundEnabled:', enabled);
+    set({ soundEnabled: enabled });
+  },
+  setMusicEnabled: (enabled) => {
+    console.log('[UIStore] setMusicEnabled:', enabled);
+    set({ musicEnabled: enabled });
+  },
+  setVolume: (volume) => {
+    console.log('[UIStore] setVolume:', volume);
+    set({ volume });
+  },
+  setShowWallet: (show) => {
+    console.log('[UIStore] setShowWallet:', show);
+    set({ showWallet: show });
+  },
+  setActiveModal: (modal) => {
+    console.log('[UIStore] setActiveModal:', modal);
+    set({ activeModal: modal });
+  },
 }));

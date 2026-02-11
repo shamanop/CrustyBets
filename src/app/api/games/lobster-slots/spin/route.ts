@@ -5,6 +5,9 @@ import { eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { generateServerSeed, generateSlotOutcome, hashServerSeed } from '@/lib/games/provably-fair';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('API:LobsterSlotsSpin');
 
 const spinSchema = z.object({
   bet: z.number().int().min(1).max(100),
@@ -56,25 +59,33 @@ function calculateWin(reels: number[], bet: number): { payout: number; matches: 
 }
 
 export async function POST(request: Request) {
+  log.info('POST /api/games/lobster-slots/spin - Spin request received');
   try {
     const apiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (!apiKey) {
+      log.warn('Spin rejected - no API key provided');
       return NextResponse.json({ success: false, error: 'API key required' }, { status: 401 });
     }
 
+    log.debug('Querying agent by API key');
     const agent = await db.query.agents.findFirst({
       where: (a, { eq }) => eq(a.apiKey, apiKey),
     });
 
     if (!agent) {
+      log.warn('Spin rejected - invalid API key');
       return NextResponse.json({ success: false, error: 'Invalid API key' }, { status: 401 });
     }
 
+    log.debug('Agent authenticated', { agentId: agent.id, name: agent.name, balance: agent.crustyCoins });
+
     const body = await request.json();
+    log.debug('Spin request params', { bet: body.bet, lines: body.lines });
     const parsed = spinSchema.safeParse(body);
 
     if (!parsed.success) {
+      log.warn('Spin validation failed', { agentId: agent.id, errors: parsed.error.flatten() });
       return NextResponse.json(
         { success: false, error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
@@ -85,6 +96,7 @@ export async function POST(request: Request) {
     const totalBet = bet * lines;
 
     if (agent.crustyCoins < totalBet) {
+      log.warn('Spin rejected - insufficient balance', { agentId: agent.id, required: totalBet, available: agent.crustyCoins });
       return NextResponse.json(
         { success: false, error: `Insufficient CrustyCoins. Need ${totalBet}, have ${agent.crustyCoins}.` },
         { status: 400 }
@@ -100,17 +112,21 @@ export async function POST(request: Request) {
     // Generate reel outcomes
     const rawOutcomes = generateSlotOutcome(serverSeed, clientSeed, 0, 5, 1000);
     const reels = rawOutcomes.map(o => weightedSymbol(o / 1000));
+    log.debug('Reel outcomes generated', { sessionId, reels, symbols: reels.map(r => SYMBOLS[r].name) });
 
     // Calculate winnings
     const { payout, matches, symbol } = calculateWin(reels, totalBet);
+    log.debug('Win calculation complete', { sessionId, payout, matches, winningSymbol: symbol !== null ? SYMBOLS[symbol].name : null });
 
     // Deduct bet
+    log.debug('Deducting bet', { agentId: agent.id, totalBet });
     await db.update(agents)
       .set({ crustyCoins: sql`${agents.crustyCoins} - ${totalBet}` })
       .where(eq(agents.id, agent.id));
 
     // Add winnings if any
     if (payout > 0) {
+      log.debug('Crediting payout', { agentId: agent.id, payout });
       await db.update(agents)
         .set({ crustyCoins: sql`${agents.crustyCoins} + ${payout}` })
         .where(eq(agents.id, agent.id));
@@ -121,6 +137,7 @@ export async function POST(request: Request) {
     });
 
     // Record game session
+    log.debug('Recording game session', { sessionId, gameType: 'lobster-slots' });
     await db.insert(gameSessions).values({
       id: sessionId,
       gameType: 'lobster-slots',
@@ -139,6 +156,7 @@ export async function POST(request: Request) {
     });
 
     // Record transactions
+    log.debug('Recording bet transaction', { sessionId, amount: -totalBet });
     await db.insert(transactions).values({
       id: nanoid(),
       playerId: agent.id,
@@ -152,6 +170,7 @@ export async function POST(request: Request) {
     });
 
     if (payout > 0) {
+      log.debug('Recording win transaction', { sessionId, payout });
       await db.insert(transactions).values({
         id: nanoid(),
         playerId: agent.id,
@@ -165,6 +184,7 @@ export async function POST(request: Request) {
       });
     }
 
+    log.info('Spin completed', { agentId: agent.id, sessionId, bet: totalBet, payout, netResult: payout - totalBet, newBalance: updatedAgent!.crustyCoins, status: 200 });
     return NextResponse.json({
       success: true,
       data: {
@@ -185,7 +205,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Slot spin error:', error);
+    log.error('Slot spin error', { error: error instanceof Error ? error.stack : error });
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

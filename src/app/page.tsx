@@ -1,4 +1,5 @@
 'use client';
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 const Navbar = dynamic(() => import('@/components/layout/Navbar'), { ssr: false });
@@ -12,6 +13,13 @@ const AgentCTA = dynamic(() => import('@/components/landing/AgentCTA'), { ssr: f
 const FooterGraffiti = dynamic(() => import('@/components/landing/FooterGraffiti'), { ssr: false });
 
 export default function HomePage() {
+  useEffect(() => {
+    console.log('[HomePage] mounted successfully');
+    return () => {
+      console.log('[HomePage] unmounted');
+    };
+  }, []);
+
   return (
     <>
       <ScrollProgressBar />

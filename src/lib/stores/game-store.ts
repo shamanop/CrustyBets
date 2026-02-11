@@ -66,21 +66,63 @@ const initialState = {
 
 export const useGameStore = create<GameState>((set) => ({
   ...initialState,
-  setCurrentGame: (game) => set({ currentGame: game }),
-  setSessionId: (id) => set({ sessionId: id }),
-  setIsPlaying: (playing) => set({ isPlaying: playing }),
-  setIsSpectating: (spectating) => set({ isSpectating: spectating }),
+  setCurrentGame: (game) => {
+    console.log('[GameStore] setCurrentGame:', game);
+    set({ currentGame: game });
+  },
+  setSessionId: (id) => {
+    console.log('[GameStore] setSessionId:', id);
+    set({ sessionId: id });
+  },
+  setIsPlaying: (playing) => {
+    console.log('[GameStore] setIsPlaying:', playing);
+    set({ isPlaying: playing });
+  },
+  setIsSpectating: (spectating) => {
+    console.log('[GameStore] setIsSpectating:', spectating);
+    set({ isSpectating: spectating });
+  },
   updateClawPosition: (pos) => set({ clawPosition: pos }),
-  setClawOpen: (open) => set({ clawOpen: open }),
-  setIsDropping: (dropping) => set({ isDropping: dropping }),
+  setClawOpen: (open) => {
+    console.log('[GameStore] setClawOpen:', open);
+    set({ clawOpen: open });
+  },
+  setIsDropping: (dropping) => {
+    console.log('[GameStore] setIsDropping:', dropping);
+    set({ isDropping: dropping });
+  },
   setTimeRemaining: (time) => set({ timeRemaining: time }),
-  setSelectedShell: (shell) => set({ selectedShell: shell }),
-  setShufflePhase: (phase) => set({ shufflePhase: phase }),
-  setReels: (reels) => set({ reels }),
-  setSpinning: (spinning) => set({ spinning: spinning }),
-  addRouletteBet: (bet) => set((state) => ({ rouletteBets: [...state.rouletteBets, bet] })),
-  clearRouletteBets: () => set({ rouletteBets: [] }),
-  setRoulettePhase: (phase) => set({ roulettePhase: phase }),
+  setSelectedShell: (shell) => {
+    console.log('[GameStore] setSelectedShell:', shell);
+    set({ selectedShell: shell });
+  },
+  setShufflePhase: (phase) => {
+    console.log('[GameStore] setShufflePhase:', phase);
+    set({ shufflePhase: phase });
+  },
+  setReels: (reels) => {
+    console.log('[GameStore] setReels, reel count:', reels.length);
+    set({ reels });
+  },
+  setSpinning: (spinning) => {
+    console.log('[GameStore] setSpinning:', spinning);
+    set({ spinning: spinning });
+  },
+  addRouletteBet: (bet) => {
+    console.log('[GameStore] addRouletteBet:', bet.type, bet.value, 'amount:', bet.amount);
+    set((state) => ({ rouletteBets: [...state.rouletteBets, bet] }));
+  },
+  clearRouletteBets: () => {
+    console.log('[GameStore] clearRouletteBets');
+    set({ rouletteBets: [] });
+  },
+  setRoulettePhase: (phase) => {
+    console.log('[GameStore] setRoulettePhase:', phase);
+    set({ roulettePhase: phase });
+  },
   setRouletteTimeRemaining: (time) => set({ rouletteTimeRemaining: time }),
-  resetGame: () => set(initialState),
+  resetGame: () => {
+    console.log('[GameStore] resetGame - resetting to initial state');
+    set(initialState);
+  },
 }));
